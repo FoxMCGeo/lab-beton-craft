@@ -1,1 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#121212">
+    <title>LAB BÉTON | Смета</title>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --gold: #d4af37; --text: #e0e0e0; --muted: #888888; --border: #333; }
+        * { box-sizing: border-box; font-family: -apple-system, sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); padding: 15px; padding-bottom: 120px; }
+        h1 { color: var(--gold); font-size: 18px; text-align: center; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; }
+        
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+        .card-title { color: var(--gold); font-size: 14px; text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 5px; font-weight: bold;}
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        
+        label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
+        input { width: 100%; background: #2a2a2a; border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 8px; font-size: 14px; appearance: none; }
+        input:focus { outline: none; border-color: var(--gold); }
 
+        .settings-btn { background: none; border: none; color: var(--muted); font-size: 12px; text-decoration: underline; margin-bottom: 15px; cursor: pointer; width: 100%; text-align: left; }
+        .settings-panel { display: none; background: #161616; padding: 15px; border-radius: 8px; border: 1px dashed var(--border); margin-bottom: 20px; }
+        
+        .result-box { background: #1a1a1a; border-radius: 8px; padding: 15px; border-left: 3px solid var(--gold); margin-bottom: 15px; display: none; }
+        .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #262626; font-size: 14px; }
+        .result-row.bold { border-bottom: 1px solid #444; font-weight: bold; margin-top: 5px; padding-top: 10px; color: var(--gold); }
+        .result-row span { color: #fff; font-weight: bold; }
+        
+        .total-box { position: fixed; bottom: 0; left: 0; width: 100%; background: #000; padding: 15px 20px; border-top: 1px solid var(--gold); display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
+        .total-val { font-size: 22px; color: var(--gold); font-weight: bold; }
+        .btn-calc { background: var(--gold); color: #000; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 14px;}
+    </style>
+</head>
+<body>
+
+<h1>LAB BÉTON | Смета</h1>
+
+<div class="card">
+    <div class="card-title">ОСНОВНЫЕ ПОВЕРХНОСТИ (СИСТЕМА + ЛАК)</div>
+    <div class="grid">
+        <div style="grid-column: span 2;">
+            <label>Площадь пола (м²)</label>
+            <input type="number" id="floor_area" value="0" min="0" step="0.5">
+        </div>
+    </div>
+    <div class="grid">
+        <div>
+            <label>Площадь стен (м²)</label>
+            <input type="number" id="wall_area" value="0" min="0" step="0.5">
+        </div>
+        <div>
+            <label>Кол-во плоскостей (Стены)</label>
+            <input type="number" id="wall_planes" value="1" min="1">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">ПОДГОТОВКА И СПЕЦУЧАСТКИ (м²)</div>
+    <div class="grid">
+        <div>
+            <label>Кварц-грунт</label>
+            <input type="number" id="quartz_area" value="0" min="0" step="0.5">
+        </div>
+        <div>
+            <label>Праймер под лак ПУ</label>
+            <input type="number" id="pu_area" value="0" min="0" step="0.5">
+        </div>
+    </div>
+    <div style="margin-top: 15px; border-top: 1px dashed var(--border); padding-top: 10px;">
+        <label style="color: var(--gold);">Гидроизоляция</label>
+        <div class="grid" style="margin-bottom: 0;">
+            <div>
+                <label>Площадь (м²)</label>
+                <input type="number" id="hydro_area" value="0" min="0" step="0.5">
+            </div>
+            <div>
+                <label>Цена Мат. (₾/м²)</label>
+                <input type="number" id="hydro_mat" value="0" min="0">
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <label>Цена Работа (₾/м²)</label>
+            <input type="number" id="hydro_labor" value="0" min="0">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">КОЭФФИЦИЕНТЫ</div>
+    <div>
+        <label>Наценка за сложность объекта (К работе) (%)</label>
+        <input type="number" id="risk_pct" value="0" min="0">
+    </div>
+</div>
+
+<button class="settings-btn" onclick="toggleSettings()">⚙️ Скрытые настройки цен</button>
+<div class="settings-panel" id="setPanel">
+    <label style="color:var(--gold);">Базовая ставка РАБОТА (₾ / м²)</label>
+    <input type="number" id="rate_labor" value="100" style="margin-bottom: 15px;">
+    
+    <label style="color:var(--gold);">Себестоимость LAB BÉTON v2.2 (МАТЕРИАЛ) (₾ / м²)</label>
+    <div style="font-size: 10px; color: #888; margin-bottom: 5px;">*Включает смесь, латекс, лак, шлам, валики, защиты и скрытое время.</div>
+    <input type="number" id="cost_lab_beton" value="46.55" step="0.01" style="margin-bottom: 15px;">
+
+    <div class="grid">
+        <div>
+            <label>Кварц-грунт МАТ. (₾/м²)</label>
+            <input type="number" id="rate_quartz_mat" value="2.5" step="0.5">
+        </div>
+        <div>
+            <label>Кварц-грунт РАБ. (₾/м²)</label>
+            <input type="number" id="rate_quartz_labor" value="5" step="0.5">
+        </div>
+    </div>
+    
+    <button onclick="toggleSettings()" style="width:100%; padding:10px; background:#333; color:#fff; border:none; border-radius:5px; margin-top:15px;">Закрыть</button>
+</div>
+
+<div class="result-box" id="resBox">
+    <div class="card-title" style="border:none; margin-bottom:5px;">Итоговая Смета</div>
+    
+    <div class="result-row" style="color: var(--muted);">Минимальный срок выполнения: <span id="out_days" style="color: var(--gold);">0 дней</span></div>
+    
+    <div class="result-row bold" style="margin-top: 15px;">ИТОГО РАБОТА: <span id="out_labor_total">0 ₾</span></div>
+    <div class="result-row bold">ИТОГО МАТЕРИАЛЫ: <span id="out_mat_total">0 ₾</span></div>
+</div>
+
+<div class="total-box">
+    <div>
+        <div style="font-size: 10px; color: var(--muted);">ОБЩАЯ СУММА</div>
+        <div id="out_perm2" style="font-size: 12px; color: #fff;">0 ₾ / м²</div>
+        <div class="total-val" id="out_total">0 ₾</div>
+    </div>
+    <button class="btn-calc" onclick="calculate()">Считать</button>
+</div>
+
+<script>
+    // Загрузка сохраненных настроек
+    window.onload = function() {
+        const saved = JSON.parse(localStorage.getItem('labBetonSettings'));
+        if(saved) {
+            document.getElementById('rate_labor').value = saved.rateLabor || 100;
+            document.getElementById('cost_lab_beton').value = saved.costLabBeton || 46.55;
+            document.getElementById('rate_quartz_mat').value = saved.rateQuartzMat || 2.5;
+            document.getElementById('rate_quartz_labor').value = saved.rateQuartzLabor || 5;
+        }
+    }
+
+    function toggleSettings() {
+        const p = document.getElementById('setPanel');
+        p.style.display = p.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function calculate() {
+        // Вводные площади
+        const aFloor = parseFloat(document.getElementById('floor_area').value) || 0;
+        const aWall = parseFloat(document.getElementById('wall_area').value) || 0;
+        const totalArea = aFloor + aWall;
+        const wlPlanes = parseInt(document.getElementById('wall_planes').value) || 1;
+        
+        const aQuartz = parseFloat(document.getElementById('quartz_area').value) || 0;
+        const aPU = parseFloat(document.getElementById('pu_area').value) || 0;
+        
+        const aHydro = parseFloat(document.getElementById('hydro_area').value) || 0;
+        const costHydroMat = parseFloat(document.getElementById('hydro_mat').value) || 0;
+        const costHydroLabor = parseFloat(document.getElementById('hydro_labor').value) || 0;
+
+        const riskVal = parseFloat(document.getElementById('risk_pct').value) || 0;
+
+        // Настройки Цен
+        const rateLabor = parseFloat(document.getElementById('rate_labor').value) || 0;
+        const costLabBeton = parseFloat(document.getElementById('cost_lab_beton').value) || 0;
+        const rateQuartzMat = parseFloat(document.getElementById('rate_quartz_mat').value) || 0;
+        const rateQuartzLabor = parseFloat(document.getElementById('rate_quartz_labor').value) || 0;
+
+        // Сохранение настроек
+        localStorage.setItem('labBetonSettings', JSON.stringify({
+            rateLabor: rateLabor,
+            costLabBeton: costLabBeton,
+            rateQuartzMat: rateQuartzMat,
+            rateQuartzLabor: rateQuartzLabor
+        }));
+
+        if (totalArea === 0 && aQuartz === 0 && aPU === 0 && aHydro === 0) return alert('Введите площадь!');
+
+        // 1. РАСЧЕТ ДНЕЙ (Технология)
+        let days = 0;
+        if (totalArea > 0) {
+            // Ф1 (База) = 1 день всегда
+            let f2Days = 1;
+            let f3Days = 1;
+
+            // Правило параллельных стен (если стен нет, считаем только пол = 1 день)
+            if (aWall > 0 && wlPlanes > 1) {
+                f2Days = 2;
+                f3Days = 2;
+            }
+
+            // Сумма: Ф1 + Ф2 + Ф3 + Лак (3 слоя)
+            days = 1 + f2Days + f3Days + 3;
+        }
+
+        // 2. РАСЧЕТ РАБОТЫ
+        const laborMain = totalArea * rateLabor;
+        const laborPU = aPU * 2; // Фикс 2 лари
+        const laborQuartz = aQuartz * rateQuartzLabor;
+        const laborHydro = aHydro * costHydroLabor;
+        
+        const pureLabor = laborMain + laborPU + laborQuartz + laborHydro;
+        const riskLaborAmount = pureLabor * (riskVal / 100);
+        const finalLabor = pureLabor + riskLaborAmount;
+
+        // 3. РАСЧЕТ МАТЕРИАЛОВ
+        const matMain = totalArea * costLabBeton; // Включает ВСЁ (систему, расходники, шлам, лак)
+        const matPU = aPU * 3; // Фикс 3 лари
+        const matQuartz = aQuartz * rateQuartzMat;
+        const matHydro = aHydro * costHydroMat;
+        
+        const finalMat = matMain + matPU + matQuartz + matHydro;
+
+        // 4. ВЫВОД ДАННЫХ В UI
+        document.getElementById('resBox').style.display = 'block';
+        
+        document.getElementById('out_days').innerText = days + " дней";
+        document.getElementById('out_labor_total').innerText = Math.round(finalLabor) + " ₾";
+        document.getElementById('out_mat_total').innerText = Math.round(finalMat) + " ₾";
+
+        const grandTotal = finalLabor + finalMat;
+        document.getElementById('out_total').innerText = Math.round(grandTotal) + " ₾";
+        
+        const divArea = totalArea > 0 ? totalArea : 1;
+        document.getElementById('out_perm2').innerText = Math.round(grandTotal / divArea) + " ₾ / м²";
+    }
+</script>
+</body>
+</html>
